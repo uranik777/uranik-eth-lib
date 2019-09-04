@@ -33,6 +33,25 @@ class Token{
 	constructor() {
 		//stub
 	}
+	setTokenContract(contractAddress){
+		this.contract = new web3.eth.Contract(minABI,contractAddress);
+	}
+	async getName(){
+		let name=await this.contract.methods.name().call();
+		return name;
+	}
+	async getSymbol(){
+		let symbol=await this.contract.methods.symbol().call();
+		return symbol;
+	}
+	async getBalance(ethaddress){
+		let balance=await this.contract.methods.balanceOf(ethaddress).call();
+		let decimals = await this.contract.methods.decimals().call();
+		return balance/Math.pow(10,decimals);
+	}
+	async transfer(fromAddr,toAddr, value){
+		throw new Error('not implemented now');
+	}
 }
 
 
