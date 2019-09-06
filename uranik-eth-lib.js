@@ -66,7 +66,7 @@ class Eth{
 	}
 	async getBalance(addr){
 		let balance =await web3.eth.getBalance(addr); 
-		let ethBalance=await web3.fromWei(balance, 'ether');
+		let ethBalance=await web3.utils.fromWei(balance, 'ether');
 		return ethBalance;
 	}
 	async mainAccount(){
