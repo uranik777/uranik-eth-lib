@@ -25,13 +25,23 @@ let minABI = [
     "name":"decimals",
     "outputs":[{"name":"","type":"uint8"}],
     "type":"function"
+  },
+  // transfer token coins
+  {
+  	"constant":false,
+  	"inputs":[{"name":"to","type":"address"},{"name":"value","type":"uint256"}],
+  	"name":"transfer",
+  	"outputs":[{"name":"","type":"bool"}],
+  	"payable":false,
+  	"stateMutability":"nonpayable",
+  	"type":"function"
   }
 ];
 
 
 class Token{
-	constructor() {
-		//stub
+	constructor(parent) {
+		this.parent=parent;
 	}
 	setTokenContract(contractAddress){
 		this.contract = new web3.eth.Contract(minABI,contractAddress);
@@ -49,16 +59,33 @@ class Token{
 		let decimals = await this.contract.methods.decimals().call();
 		return balance/Math.pow(10,decimals);
 	}
-	async transfer(fromAddr,toAddr, value){
-		throw new Error('not implemented now');
+	async transfer(fromAddrPrivateKey,toAddr, tokenAmount ){
+		let decimals = await this.contract.methods.decimals().call();
+
+		let to,skey,amount,fee;
+		to=toAddr;
+		skey=fromAddrPrivateKey;
+		amount=0; // eth amount = 0 for token transfer
+		// if fee undefined - calculated automativally
+
+		let internalAmount= tokenAmount * Math.pow(10,decimals);
+
+		let params={to,skey,amount,fee};
+
+		params.data = await this.contract.methods.transfer(toAddr, internalAmount).encodeABI();
+
+		let hash = await this.parent.sendRawTx(params);
+
+		return hash;
 	}
 }
 
 
 
+
 class Eth{
 	constructor() {
-		this.token=new Token();
+		this.token=new Token(this);
 	}
 
 	async getNewAddress(){
@@ -162,9 +189,15 @@ class Eth{
 		    gasLimit: gasLimit,
 		    gasPrice: String( Math.round(txGasPrice) )
 		};
-		if(params.nonce){
+
+		if(typeof params.nonce !== "undefined"){
 		    txObj.nonce=params.nonce;
 		}
+
+		if(typeof params.data !== "undefined"){
+		    txObj.data=params.data;
+		}
+
 
 		let rawtx=await web3.eth.accounts.signTransaction(txObj, params.skey);
 
